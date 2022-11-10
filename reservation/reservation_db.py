@@ -104,6 +104,7 @@ class ReservationDB:
         connection.commit()
         cursor.close()
         connection.close()
+        
     def get_hotels(self):
         result = list()
         try:

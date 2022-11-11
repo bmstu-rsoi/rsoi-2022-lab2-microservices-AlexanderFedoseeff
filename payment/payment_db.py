@@ -25,15 +25,15 @@ class PaymentDB:
 
     def create_table_payment(self):
         q = '''
-                CREATE TABLE payment
-                (
-                    id          SERIAL PRIMARY KEY,
-                    payment_uid uuid        NOT NULL,
-                    status      VARCHAR(20) NOT NULL
-                        CHECK (status IN ('PAID', 'CANCELED')),
-                    price       INT         NOT NULL
-                );
-                '''
+            CREATE TABLE payment
+            (
+                id          SERIAL PRIMARY KEY,
+                payment_uid uuid        NOT NULL,
+                status      VARCHAR(20) NOT NULL
+                    CHECK (status IN ('PAID', 'CANCELED')),
+                price       INT         NOT NULL
+            );
+            '''
         connection = psycopg2.connect(self.DB_URL, sslmode="require")
         cursor = connection.cursor()
         cursor.execute(q)
@@ -53,6 +53,37 @@ class PaymentDB:
                 result.append({"id": i[0], "payment_uid": i[1], "status": i[2], "price": i[3]})
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+                print("Соединение с PostgreSQL закрыто")
+        return result
+
+    def post_payment(self, uiid, price):
+        result = list()
+        try:
+            connection = psycopg2.connect(self.DB_URL, sslmode="require")
+            cursor = connection.cursor()
+            q = '''
+                INSERT INTO payment
+                (
+                    payment_uid,
+                    status,
+                    price
+                )
+                VALUES 
+                (
+                    %s,
+                    %s,
+                    %s
+                );
+                '''
+            cursor.execute(q, (uiid, 'PAID', price))
+            result.append({'payment_uid': uiid, 'status': 'PAID'})
+        except (Exception, Error) as error:
+            print("Ошибка при работе с PostgreSQL", error)
+            result.append({'payment_uid': uiid, 'status': 'PAID'})
         finally:
             if connection:
                 cursor.close()

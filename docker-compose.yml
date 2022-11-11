@@ -31,7 +31,7 @@ services:
   payment:
     restart: on-failure
     build: ./payment/
-    container_name: paymen
+    container_name: payment
     ports:
       - "8060:8060"
 

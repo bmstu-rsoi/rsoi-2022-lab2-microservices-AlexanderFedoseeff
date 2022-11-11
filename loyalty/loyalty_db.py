@@ -62,18 +62,18 @@ class LoyaltyDB:
         connection.close()
 
     
-    def get_loyalty(self):
+    def get_loyalty(self, username):
         result = list()
         try:
             connection = psycopg2.connect(self.DB_URL, sslmode="require")
             cursor = connection.cursor()
-            #cursor.execute("SELECT id, username, reservation_count, status, discount FROM loyalty")
-            cursor.execute("SELECT reservation_count, status, discount FROM loyalty")
+            username = username.replace('+', ' ')
+            cursor.execute(''' SELECT reservation_count, status, discount, username FROM loyalty ''')
             record = cursor.fetchall()
             for i in record:
                 i = list(i)
-                #result.append({"id": i[0], "username": i[1], "reservation_count": i[2], "status": i[3], "discount": i[4]})
-                result.append({"reservation_count": i[0], "status": i[1], "discount": i[2]})
+                if i[3] == username:
+                    result.append({"reservation_count": i[0], "status": i[1], "discount": i[2]})
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
         finally:

@@ -80,6 +80,7 @@ class PaymentDB:
                 );
                 '''
             cursor.execute(q, (uiid, 'PAID', price))
+            connection.commit()
             result.append({'payment_uid': uiid, 'status': 'PAID'})
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)

@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2 import Error
+import datetime
 
 class ReservationDB:
     def __init__(self):
@@ -49,7 +50,7 @@ class ReservationDB:
                         status          VARCHAR(20) NOT NULL
                             CHECK (status IN ('PAID', 'CANCELED')),
                         start_date      TIMESTAMP WITH TIME ZONE,
-                        end_data        TIMESTAMP WITH TIME ZONE
+                        end_date        TIMESTAMP WITH TIME ZONE
                     );
                     '''
         connection = psycopg2.connect(self.DB_URL, sslmode="require")
@@ -110,11 +111,11 @@ class ReservationDB:
         try:
             connection = psycopg2.connect(self.DB_URL, sslmode="require")
             cursor = connection.cursor()
-            cursor.execute("SELECT hotel_uid, name, country, city, address, stars, price FROM hotels")
+            cursor.execute("SELECT id, hotel_uid, name, country, city, address, stars, price FROM hotels")
             record = cursor.fetchall()
             for i in record:
                 i = list(i)
-                result.append({"hotel_uid": i[0], "name": i[1], "country": i[2], "city": i[3], "address": i[4], "stars": i[5], "price": i[6]})
+                result.append({'hotel_id': i[0], "hotel_uid": i[1], "name": i[2], "country": i[3], "city": i[4], "address": i[5], "stars": i[6], "price": i[7]})
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
         finally:
@@ -123,17 +124,56 @@ class ReservationDB:
                 connection.close()
                 print("Соединение с PostgreSQL закрыто")
         return result
-'''
-    def get_persons(self):
+
+    def user_reservations(self, username):
         result = list()
         try:
             connection = psycopg2.connect(self.DB_URL, sslmode="require")
             cursor = connection.cursor()
-            cursor.execute("SELECT id, name, address, work, age FROM persons")
-            record = cursor.fetchall()
-            for i in record:
+            q1 = '''
+                    SELECT 
+                        reservation_uid,
+                        payment_uid,
+                        hotel_id,
+                        status,
+                        start_date,
+                        end_date 
+                    FROM
+                    reservation WHERE username = %s
+            '''
+            q2 = '''
+                    SELECT 
+                        hotel_uid, 
+                        name, 
+                        country, 
+                        city, address, 
+                        stars
+                    FROM 
+                    hotels WHERE id = %s
+            '''
+            cursor.execute(q1, (username,))
+            reservation = cursor.fetchall()
+            print(reservation)
+            for i in reservation:
                 i = list(i)
-                result.append({"id": i[0], "name": i[1], "address": i[2], "work": i[3], "age": i[4]})
+                cursor.execute(q2, (i[2],))
+                hotel = cursor.fetchall()
+                print('\n')
+                print(hotel)
+                hotel = list(hotel[0])
+                result.append({
+                                'reservationUid': i[0], 
+                                'paymentUid': i[1], 
+                                'hotel': {
+                                    'hotelUid': i[2],
+                                    'name': hotel[1],
+                                    'fullAddress': hotel[2] + ', ' + hotel[3] + ', ' + hotel[4],
+                                    'stars': hotel[5]
+                                    }, 
+                                'status': i[3], 
+                                'startDate': i[4].strftime("%Y-%m-%d"), 
+                                'endDate': i[5].strftime("%Y-%m-%d")})
+            print(result)
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
         finally:
@@ -143,61 +183,29 @@ class ReservationDB:
                 print("Соединение с PostgreSQL закрыто")
         return result
 
-    def create_person(self, person_created):
+    def reservate(self, reservation_uid, username, payment_uid, hotel_id, status, start_date, end_date):
         result = False
         try:
             connection = psycopg2.connect(self.DB_URL, sslmode="require")
             cursor = connection.cursor()
-            insert_query = """ INSERT INTO persons (id, name, age, address, work) VALUES (%s, %s, %s, %s, %s) """
-            cursor.execute(insert_query, (person_created['id'], person_created['name'], person_created['age'], person_created['address'], person_created['work']))
-            connection.commit()
-            result = True
-            print("запись успешно вставлена")
-        except (Exception, Error) as error:
-            print("Ошибка при работе с PostgreSQL", error)
-        finally:
-            if connection:
-                cursor.close()
-                connection.close()
-                print("Соединение с PostgreSQL закрыто")
-        return result
 
-    def update_person(self, person_updated):
-        result = False
-        try:
-            connection = psycopg2.connect(self.DB_URL, sslmode="require")
-            cursor = connection.cursor()
-            if 'name' in person_updated:
-                insert_query = """ UPDATE persons SET name = %s WHERE id = %s"""
-                cursor.execute(insert_query, (person_updated['name'], person_updated['id']))
-            if 'age' in person_updated:
-                insert_query = """ UPDATE persons SET age = %s WHERE id = %s"""
-                cursor.execute(insert_query, (person_updated['age'], person_updated['id']))
-            if 'address' in person_updated:
-                insert_query = """ UPDATE persons SET address = %s WHERE id = %s"""
-                cursor.execute(insert_query, (person_updated['address'], person_updated['id']))
-            if 'work' in person_updated:
-                insert_query = """ UPDATE persons SET work = %s WHERE id = %s"""
-                cursor.execute(insert_query, (person_updated['work'], person_updated['id']))
-            connection.commit()
-            result = True
-            print("запись успешно обновленаа")
-        except (Exception, Error) as error:
-            print("Ошибка при работе с PostgreSQL", error)
-        finally:
-            if connection:
-                cursor.close()
-                connection.close()
-                print("Соединение с PostgreSQL закрыто")
-        return result
-
-    def delete_person(self, person_id):
-        result = False
-        try:
-            connection = psycopg2.connect(self.DB_URL, sslmode="require")
-            cursor = connection.cursor()
-            insert_query = """ DELETE FROM persons WHERE id = '%s' """
-            cursor.execute(insert_query, (person_id))
+            q = '''
+                    INSERT INTO reservation
+                    (
+                        reservation_uid,
+                        username,
+                        payment_uid,
+                        hotel_id,
+                        status,
+                        start_date,
+                        end_date
+                    )
+                    VALUES 
+                    (
+                        %s, %s, %s, %s, %s, %s, %s
+                    );
+                    '''
+            cursor.execute(q, (reservation_uid, username, payment_uid, hotel_id, status, start_date, end_date))
             connection.commit()
             result = True
         except (Exception, Error) as error:
@@ -208,4 +216,4 @@ class ReservationDB:
                 connection.close()
                 print("Соединение с PostgreSQL закрыто")
         return result
-        '''
+        

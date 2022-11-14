@@ -67,13 +67,12 @@ class LoyaltyDB:
         try:
             connection = psycopg2.connect(self.DB_URL, sslmode="require")
             cursor = connection.cursor()
-            username = username.replace('+', ' ')
-            cursor.execute(''' SELECT reservation_count, status, discount, username FROM loyalty ''')
+            cursor.execute(''' SELECT reservation_count, status, discount, username FROM loyalty WHERE username = %s ''', (username,))
+
             record = cursor.fetchall()
-            for i in record:
-                i = list(i)
-                if i[3] == username:
-                    result.append({"reservation_count": i[0], "status": i[1], "discount": i[2]})
+            print(record)
+            result.append({'reservation_count': record[0][0], 'status': record[0][1], 'discount': record[0][2]})
+
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
         finally:
@@ -82,3 +81,62 @@ class LoyaltyDB:
                 connection.close()
                 print("Соединение с PostgreSQL закрыто")
         return result
+
+    def patch_loyalty_up(self, username):
+        result = False
+        try:
+            current_loyalty = self.get_loyalty(username)
+            if len(current_loyalty) > 0:
+                current_reservation_count = current_loyalty[0]['reservation_count']
+                current_status = current_loyalty[0]['status']
+                current_discount = current_loyalty[0]['discount']
+                target_reservation_count = current_reservation_count + 1
+                if target_reservation_count < 10:
+                    target_status = 'BRONZE'
+                    target_discount = 5
+                elif target_reservation_count < 20:
+                    target_status = 'SILVER'
+                    target_discount = 7
+                else:
+                    target_status = 'GOLD'
+                    target_discount = 10
+                connection = psycopg2.connect(self.DB_URL, sslmode="require")
+                cursor = connection.cursor()
+                q = ''' UPDATE loyalty SET reservation_count = %s, status = %s, discount = %s WHERE username = %s; '''
+                cursor.execute(q, (target_reservation_count, target_status, target_discount, username))
+                connection.commit()
+                result = True
+            else:
+                q = '''
+                INSERT INTO loyalty
+                (
+                    username,
+                    reservation_count,
+                    status,
+                    discount
+                )
+                VALUES (%s, %s, %s, %s);
+                '''
+                cursor.execute(q, (username, 1, 'BRONZE', 5))
+                connection.commit()
+                result = True
+        except (Exception, Error) as error:
+            print("Ошибка при работе с PostgreSQL", error)
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+                print("Соединение с PostgreSQL закрыто")
+        return result
+    
+    def create_user(self, username):
+        q = '''
+            INSERT INTO loyalty
+            (
+                username,
+                reservation_count,
+                status,
+                discount
+            )
+            VALUES (%s, %s, %s, %s);
+            '''

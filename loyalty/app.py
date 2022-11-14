@@ -23,14 +23,25 @@ def get_test():
 @app.route('/api/v1/loyalty', methods=['GET'])
 def get_loyalty():
     db = LoyaltyDB()
-    username = request.args.get('username', default=0, type=str)
-    result = list(db.get_loyalty(username))
+    username = request.args.get('username', default=' ', type=str)
+    result = db.get_loyalty(username)
     if len(result) == 1:
         return make_response(jsonify(result[0]), 200)
     elif len(result) == 0:
         return make_response(jsonify({'service': 'loyalty', 'error': 'Not found in db', 'username': username}), 404)
     else:
         return make_response(jsonify({'service': 'loyalty', 'error': 'More then one result in db', 'username': username}), 500)
+
+@app.route('/api/v1/loyalty_up', methods=['PATCH'])
+def patch_loyalty():
+    #username = request.headers.get('X-User-Name')
+    username = request.form['username']
+    db = LoyaltyDB()
+    result = db.patch_loyalty_up(username)
+    if result:
+        return make_response(jsonify({}), 200)
+    else:
+        return make_response(jsonify({}), 404)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=int(port))

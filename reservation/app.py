@@ -26,96 +26,32 @@ def get_hotels():
     page = request.args.get('page', default=0, type= int)
     size = request.args.get('size', default=0, type= int)
     db = ReservationDB()
-    print(db.get_hotels())
-    print(page)
-    print(size)
     items = db.get_hotels()
     result = {'page': page, 'pageSize': size, 'totalElements': len(items),  'items': items}
     return make_response(jsonify(result), 200)
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True, port=int(port))
-'''
-@app.route('/api/v1/persons/<int:person_id>', methods=['GET'])
-def get_person(person_id):
-    db = ControlDB()
-    persons = db.get_persons()
-    person = list(filter(lambda t: t['id'] == person_id, persons))
-    if len(person) == 0:
-        abort(404)
-    return make_response(jsonify(person[0]), 200)
-
-@app.errorhandler(404)
-def not_found(error):
-    return make_response(jsonify({'error': 'Not found'}), 404)
-
-@app.route('/api/v1/persons', methods=['POST'])
-def create_person():
-    db = ControlDB()
-    persons = db.get_persons()
-    if not request.json:
-        abort(400)
-    person_id = 0
-    if len(persons) == 0:
-        person_id = 1
+@app.route('/api/v1/reservate', methods=['POST'])
+def reservate():
+    db = ReservationDB()
+    reservation_uid = request.form['reservation_uid']
+    username= request.form['username']
+    payment_uid = request.form['payment_uid']
+    hotel_id = request.form['hotel_id']
+    status = request.form['status']
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    result = db.reservate(reservation_uid, username, payment_uid, hotel_id, status, start_date, end_date)
+    if result:
+        return make_response(jsonify({}), 201)
     else:
-        for p in persons:
-            if p['id'] > person_id:
-                person_id = p['id']
-        person_id = person_id + 1
-    person_created = {
-        'id': person_id,
-        'name': request.json['name'],
-        'age': request.json['age'],
-        'address': request.json['address'],
-        'work': request.json['work']
-    }
-    db.create_person(person_created)
-    return jsonify({}), 201, {"Location": "/api/v1/persons/" + str(person_id)}
+        return make_response(jsonify({}), 400)
 
-@app.route('/api/v1/persons/<int:person_id>', methods=['PATCH'])
-def update_person(person_id):
-    if not request.json:
-        abort(400)
-    db = ControlDB()
-    persons = db.get_persons()
-    person = list(filter(lambda t: t['id'] == person_id, persons))
-    if len(person) == 0:
-        abort(404)
-    person_updated = {
-        'id': person_id
-    }
-    request_data = request.get_json()
-    if 'name' in request_data:
-        person_updated['name'] = request.json['name']
-    if 'age' in request_data:
-        person_updated['age'] = request.json['age']
-    if 'address' in request_data:
-        person_updated['address'] = request.json['address']
-    if 'work' in request_data:
-        person_updated['work'] = request.json['work']
-    if db.update_person(person_updated):
-        persons_updateted = db.get_persons()
-        updated_person = list(filter(lambda t: t['id'] == person_id, persons_updateted))
-        if len(updated_person) == 0:
-            abort(404)
-        return make_response(jsonify(updated_person[0]), 200)
-    else:
-        abort(404)
-
-@app.route('/api/v1/persons/<int:person_id>', methods=['DELETE'])
-def delete_person(person_id):
-    db = ControlDB()
-    persons = db.get_persons()
-    for p, person in enumerate(persons):
-        if persons[p]['id'] == person_id:
-            print("i have found")
-            db.delete_person([person_id])
-            break
-        if (len(persons)) - 1 == p:
-            abort(404)
-    return jsonify({}), 204
+@app.route('/api/v1/get_user_reservations', methods=['GET'])
+def get_user_reservations():
+    username = request.args.get('username', default=' ', type=str)
+    db = ReservationDB()
+    result = db.user_reservations(username)
+    return make_response(result, 200)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=int(port))
-'''

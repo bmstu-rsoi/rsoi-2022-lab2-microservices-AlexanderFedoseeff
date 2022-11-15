@@ -83,10 +83,10 @@ def create_person():
     days = duration.days
 
     for i in range(len(result_hotels['items'])):
-        if result_hotels['items'][i]['hotel_uid'] == request.json['hotelUid']:
+        if result_hotels['items'][i]['hotelUid'] == request.json['hotelUid']:
             find_hotel_id = True
             hotel_id = result_hotels['items'][i]['hotel_id']
-            hotel_uid = result_hotels['items'][i]['hotel_uid']
+            hotel_uid = result_hotels['items'][i]['hotelUid']
             price = result_hotels['items'][i]['price']
             break
 
@@ -104,13 +104,13 @@ def create_person():
                     #бронируем
                     reservationUid = str(uuid.uuid4())
                     reserv_dict = {
-                    'reservation_uid': reservationUid,
+                    'reservationUid': reservationUid,
                     'username': username,
-                    'payment_uid': paymentUid,
+                    'paymentUid': paymentUid,
                     'hotel_id': hotel_id,
                     'status': status,
-                    'start_date': date_time_obj_startDate,
-                    'end_date': date_time_obj_endDate
+                    'startDate': date_time_obj_startDate,
+                    'endDate': date_time_obj_endDate
                     }
                     response_reservate = requests.post('http://reservation:8070/api/v1/reservate', data = reserv_dict)
                     if response_reservate.status_code == 201:
@@ -160,11 +160,11 @@ def cancel_reservation():
     if 'X-User-Name' not in request.headers:
         abort(400)
     username = request.headers.get('X-User-Name')
-    reservationUid = request.args.get('reservationUid', default='', type= str)
-    response_reservation = requests.post('http://reservation:8070/api/v1/cancel_reservation', data = {'reservation_uid': reservationUid})
+    reservationUid = request.args.get('reservationUid', default='', type= uuid)
+    response_reservation = requests.post('http://reservation:8070/api/v1/cancel_reservation', data = {'reservationUid': reservationUid})
     if response_reservation.status_code == 201:
-        paymentUid = response_reservation.json()['payment_uid']
-        response_payment = requests.post('http://payment:8060/api/v1/cancel_payment', data = {'payment_uid': paymentUid})
+        paymentUid = response_reservation.json()['paymentUid']
+        response_payment = requests.post('http://payment:8060/api/v1/cancel_payment', data = {'paymentUid': paymentUid})
         if response_payment.status_code == 201:
             response_loyalty = requests.post('http://loyalty:8050/api/v1/loyalty_down', data = {'username': username})
             if response_loyalty.status_code == 201:

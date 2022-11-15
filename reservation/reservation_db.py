@@ -113,7 +113,7 @@ class ReservationDB:
             record = cursor.fetchall()
             for i in record:
                 i = list(i)
-                result.append({'hotel_id': i[0], "hotel_uid": i[1], "name": i[2], "country": i[3], "city": i[4], "address": i[5], "stars": i[6], "price": i[7]})
+                result.append({'hotel_id': i[0], "hotelUid": i[1], "name": i[2], "country": i[3], "city": i[4], "address": i[5], "stars": i[6], "price": i[7]})
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
         finally:
@@ -178,7 +178,7 @@ class ReservationDB:
                 print("Соединение с PostgreSQL закрыто")
         return result
 
-    def reservate(self, reservation_uid, username, payment_uid, hotel_id, status, start_date, end_date):
+    def reservate(self, reservationUid, username, paymentUid, hotel_id, status, startDate, endDate):
         result = False
         try:
             connection = psycopg2.connect(self.DB_URL, sslmode="require")
@@ -200,7 +200,7 @@ class ReservationDB:
                         %s, %s, %s, %s, %s, %s, %s
                     );
                     '''
-            cursor.execute(q, (reservation_uid, username, payment_uid, hotel_id, status, start_date, end_date))
+            cursor.execute(q, (reservationUid, username, paymentUid, hotel_id, status, startDate, endDate))
             connection.commit()
             result = True
         except (Exception, Error) as error:
@@ -212,17 +212,17 @@ class ReservationDB:
                 print("Соединение с PostgreSQL закрыто")
         return result
 
-    def cancel_reservation(self, reservation_uid):
+    def cancel_reservation(self, reservationUid):
         result = ''
         try:
             connection = psycopg2.connect(self.DB_URL, sslmode="require")
             cursor = connection.cursor()
             q1 = ''' UPDATE reservation SET status = %s WHERE reservation_uid = %s; '''
-            cursor.execute(q1, ('CANCELED', reservation_uid))
+            cursor.execute(q1, ('CANCELED', reservationUid))
             r = cursor.rowcount
             connection.commit()
             q2 = ''' SELECT payment_uid FROM reservation WHERE reservation_uid = %s; '''
-            cursor.execute(q2, (reservation_uid,))
+            cursor.execute(q2, (reservationUid,))
             payment_uid = cursor.fetchall()
             if r > 0:
                 result = payment_uid[0]

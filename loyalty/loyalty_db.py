@@ -71,7 +71,7 @@ class LoyaltyDB:
 
             record = cursor.fetchall()
             print(record)
-            result.append({'reservation_count': record[0][0], 'status': record[0][1], 'discount': record[0][2]})
+            result.append({'reservationCount': record[0][0], 'status': record[0][1], 'discount': record[0][2]})
 
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
@@ -87,7 +87,7 @@ class LoyaltyDB:
         try:
             current_loyalty = self.get_loyalty(username)
             if len(current_loyalty) > 0:
-                current_reservation_count = current_loyalty[0]['reservation_count']
+                current_reservation_count = current_loyalty[0]['reservationCount']
                 current_status = current_loyalty[0]['status']
                 current_discount = current_loyalty[0]['discount']
                 target_reservation_count = current_reservation_count + 1

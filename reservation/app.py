@@ -33,14 +33,14 @@ def get_hotels():
 @app.route('/api/v1/reservate', methods=['POST'])
 def reservate():
     db = ReservationDB()
-    reservation_uid = request.form['reservation_uid']
+    reservationUid = request.form['reservationUid']
     username = request.form['username']
-    payment_uid = request.form['payment_uid']
+    paymentUid = request.form['paymentUid']
     hotel_id = request.form['hotel_id']
     status = request.form['status']
-    start_date = request.form['start_date']
-    end_date = request.form['end_date']
-    result = db.reservate(reservation_uid, username, payment_uid, hotel_id, status, start_date, end_date)
+    startDate = request.form['startDate']
+    endDate = request.form['endDate']
+    result = db.reservate(reservationUid, username, paymentUid, hotel_id, status, startDate, endDate)
     if result:
         return make_response(jsonify({}), 201)
     else:
@@ -49,10 +49,10 @@ def reservate():
 @app.route('/api/v1/cancel_reservation', methods=['POST'])
 def cancel_reservation():
     db = ReservationDB()
-    reservation_uid = request.form['reservation_uid']
-    payment_uid = db.cancel_reservation(reservation_uid)
-    if payment_uid != '':
-        return make_response(jsonify({'payment_uid': payment_uid}), 201)
+    reservationUid = request.form['reservationUid']
+    paymentUid = db.cancel_reservation(reservationUid)
+    if paymentUid != '':
+        return make_response(jsonify({'paymentUid': paymentUid}), 201)
     else:
         return make_response(jsonify({}), 400)
 

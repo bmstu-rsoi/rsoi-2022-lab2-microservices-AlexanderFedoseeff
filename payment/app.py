@@ -34,9 +34,9 @@ def get_payment():
 @app.route('/api/v1/post_payment', methods=['POST'])
 def post_payment():
     price = request.form['price']
-    payment_uid = str(uuid.uuid4())
+    paymentUid = str(uuid.uuid4())
     db = PaymentDB()
-    result = list(db.post_payment(payment_uid, price))
+    result = list(db.post_payment(paymentUid, price))
     if len(result) > 0:
         return make_response(jsonify(result[0]), 201)
     else:
@@ -44,7 +44,7 @@ def post_payment():
 
 @app.route('/api/v1/cancel_payment', methods=['POST'])
 def cancel_payment():
-    paymentUid = request.form['payment_uid']
+    paymentUid = request.form['paymentUid']
     db = PaymentDB()
     if db.cancel_payment(paymentUid):
         return make_response(jsonify({}), 201)

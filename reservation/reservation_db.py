@@ -14,8 +14,7 @@ class ReservationDB:
     def check_existing_table_reservation(self):
         connection = psycopg2.connect(self.DB_URL, sslmode="require")
         cursor = connection.cursor()
-        cursor.execute("""SELECT table_name FROM information_schema.tables
-               WHERE table_schema = 'public'""")
+        cursor.execute("""SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'""")
         for table in cursor.fetchall():
             if table[0] == "reservation":
                 cursor.close()
@@ -27,8 +26,7 @@ class ReservationDB:
     def check_existing_table_hotels(self):
         connection = psycopg2.connect(self.DB_URL, sslmode="require")
         cursor = connection.cursor()
-        cursor.execute("""SELECT table_name FROM information_schema.tables
-               WHERE table_schema = 'public'""")
+        cursor.execute("""SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'""")
         for table in cursor.fetchall():
             if table[0] == "hotels":
                 cursor.close()
@@ -158,8 +156,6 @@ class ReservationDB:
                 i = list(i)
                 cursor.execute(q2, (i[2],))
                 hotel = cursor.fetchall()
-                print('\n')
-                print(hotel)
                 hotel = list(hotel[0])
                 result.append({
                                 'reservationUid': i[0], 
@@ -173,7 +169,6 @@ class ReservationDB:
                                 'status': i[3], 
                                 'startDate': i[4].strftime("%Y-%m-%d"), 
                                 'endDate': i[5].strftime("%Y-%m-%d")})
-            print(result)
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
         finally:
@@ -216,4 +211,26 @@ class ReservationDB:
                 connection.close()
                 print("Соединение с PostgreSQL закрыто")
         return result
-        
+
+    def cancel_reservation(self, reservation_uid):
+        result = ''
+        try:
+            connection = psycopg2.connect(self.DB_URL, sslmode="require")
+            cursor = connection.cursor()
+            q1 = ''' UPDATE reservation SET status = %s WHERE reservation_uid = %s; '''
+            cursor.execute(q1, ('CANCELED', reservation_uid))
+            r = cursor.rowcount
+            connection.commit()
+            q2 = ''' SELECT payment_uid FROM reservation WHERE reservation_uid = %s; '''
+            cursor.execute(q2, (reservation_uid,))
+            payment_uid = cursor.fetchall()
+            if r > 0:
+                result = payment_uid[0]
+        except (Exception, Error) as error:
+            print("Ошибка при работе с PostgreSQL", error)
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+                print("Соединение с PostgreSQL закрыто")
+        return result

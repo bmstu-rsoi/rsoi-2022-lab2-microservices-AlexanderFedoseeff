@@ -42,5 +42,14 @@ def post_payment():
     else:
         return make_response(jsonify({}), 400)
 
+@app.route('/api/v1/cancel_payment', methods=['POST'])
+def cancel_payment():
+    paymentUid = request.form['payment_uid']
+    db = PaymentDB()
+    if db.cancel_payment(paymentUid):
+        return make_response(jsonify({}), 201)
+    else:
+        return make_response(jsonify({}), 400)
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=int(port))

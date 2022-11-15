@@ -32,16 +32,6 @@ def get_hotels():
     response = requests.get('http://reservation:8070/api/v1/hotels', params = {'page': page, 'size': size})
     return make_response(response.json(), 200)
 
-#отменить бронирование
-#@app.route('/api/v1/reservation/', methods=['DELETE'])
-#def reservation_cancel():
-#    if 'X-User-Name' not in request.headers:
-#        abort(400)
-#    username = request.headers.get('X-User-Name')
-    #reservationUid = request.args.get('reservationUid', default=' ', type= uuid)
-
-#    return make_response(jsonify({'username': username}), 200)
-
 #получить информацию о статусе в системе лояльности
 @app.route('/api/v1/loyalty', methods=['GET'])
 def get_loyalty():
@@ -145,21 +135,47 @@ def create_person():
     else:
         return make_response(jsonify({"find_hotel_uid": False}), 400)
 
-#получить информацию по конкретному бронированию и удаление
-@app.route('/api/v1/reservations/', methods=['GET', 'DELETE'])
-def get_reservation():
+#получить информацию по конкретному бронированию
+@app.route('/api/v1/reservations/<reservationUid>', methods=['GET'])
+def get_reservation(reservationUid):
     if 'X-User-Name' not in request.headers:
         abort(400)
     username = request.headers.get('X-User-Name')
-    reservationUid = request.args.get('reservationUid', default=' ', type= uuid)#????!!!!!wtf!!!
     response = requests.get('http://reservation:8070/api/v1/get_user_reservations', params = {'username': username})
-    result = response.json()[0]#??????!!!!!wtf!!!
-    if request.method == 'GET':
-        return make_response(jsonify(result), 200)
-    elif request.method == 'DELETE':
-        return make_response(jsonify(result), 204)
+    response = response.json()
+    result = []
+    print('!!!')
+    for i in response:
+        if i['reservationUid'] == reservationUid:
+            result.append(i)
+            break
+    if len(result) > 0: 
+        return make_response(result[0], 200)
     else:
-        return make_response(jsonify({}), 400)#потом продолжу где-то отсюда
+        return make_response(jsonify({}), 400)
+
+#удаление бронирования
+@app.route('/api/v1/reservations/<reservationUid>', methods=['DELETE'])
+def cancel_reservation(reservationUid):
+    if 'X-User-Name' not in request.headers:
+        abort(400)
+    username = request.headers.get('X-User-Name')
+    response_reservation = requests.post('http://reservation:8070/api/v1/cancel_reservation', data = {'reservation_uid': reservationUid})
+    if response_reservation.status_code == 201:
+        paymentUid = response_reservation.json()['payment_uid']
+        response_payment = requests.post('http://payment:8060/api/v1/cancel_payment', data = {'payment_uid': paymentUid})
+        if response_payment.status_code == 201:
+            response_loyalty = requests.post('http://loyalty:8050/api/v1/loyalty_down', data = {'username': username})
+            if response_loyalty.status_code == 201:
+                return make_response(jsonify({}), 204)
+            else:
+                return make_response(jsonify({'loyalty': False}), 400)
+        else:
+            return make_response(jsonify({'payment': False}), 400)
+    else:
+        return make_response(jsonify({'reservation': False}), 400)
+
+    
 
 #инормация по всем бронированиям пользователя
 @app.route('/api/v1/reservations', methods=['GET'])
@@ -176,8 +192,10 @@ def get_reservations():
 def me():
     if 'X-User-Name' not in request.headers:
         abort(400)
-
-    return make_response({}, 200)
+    username = username = request.headers.get('X-User-Name')
+    response_reservations = requests.get('http://reservation:8070/api/v1/get_user_reservations', params = {'username': username})
+    response_loyalty = requests.get('http://loyalty:8050/api/v1/loyalty', params = {'username': username})
+    return make_response(jsonify({'reservations': response_reservations.json(), 'loyalty': response_loyalty.json()}), 200)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=int(port))

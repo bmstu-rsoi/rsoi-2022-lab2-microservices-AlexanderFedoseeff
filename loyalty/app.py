@@ -33,13 +33,23 @@ def get_loyalty():
         return make_response(jsonify({'service': 'loyalty', 'error': 'More then one result in db', 'username': username}), 500)
 
 @app.route('/api/v1/loyalty_up', methods=['PATCH'])
-def patch_loyalty():
+def loyalty_up():
     #username = request.headers.get('X-User-Name')
     username = request.form['username']
     db = LoyaltyDB()
-    result = db.patch_loyalty_up(username)
+    result = db.loyalty_up(username)
     if result:
         return make_response(jsonify({}), 200)
+    else:
+        return make_response(jsonify({}), 404)
+
+@app.route('/api/v1/loyalty_down', methods=['POST'])
+def loyalty_down():
+    username = request.form['username']
+    db = LoyaltyDB()
+    result = db.loyalty_down(username)
+    if result:
+        return make_response(jsonify({}), 201)
     else:
         return make_response(jsonify({}), 404)
 

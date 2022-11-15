@@ -91,3 +91,22 @@ class PaymentDB:
                 connection.close()
                 print("Соединение с PostgreSQL закрыто")
         return result
+
+    def cancel_payment(self, paymentUid):
+        result = False
+        try:
+            connection = psycopg2.connect(self.DB_URL, sslmode="require")
+            cursor = connection.cursor()
+            q = ''' UPDATE payment SET status = %s WHERE payment_uid = %s; '''
+            cursor.execute(q, ('CANCELED', paymentUid))
+            connection.commit()
+            if cursor.rowcount > 0:
+                result = True
+        except (Exception, Error) as error:
+            print("Ошибка при работе с PostgreSQL", error)
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+                print("Соединение с PostgreSQL закрыто")
+        return result

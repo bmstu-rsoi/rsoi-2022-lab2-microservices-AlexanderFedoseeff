@@ -82,7 +82,7 @@ class LoyaltyDB:
                 print("Соединение с PostgreSQL закрыто")
         return result
 
-    def patch_loyalty_up(self, username):
+    def loyalty_up(self, username):
         result = False
         try:
             current_loyalty = self.get_loyalty(username)
@@ -120,6 +120,41 @@ class LoyaltyDB:
                 cursor.execute(q, (username, 1, 'BRONZE', 5))
                 connection.commit()
                 result = True
+        except (Exception, Error) as error:
+            print("Ошибка при работе с PostgreSQL", error)
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+                print("Соединение с PostgreSQL закрыто")
+        return result
+
+    def loyalty_down(self, username):
+        result = False
+        try:
+            current_loyalty = self.get_loyalty(username)
+            if len(current_loyalty) > 0:
+                current_reservation_count = current_loyalty[0]['reservation_count']
+                current_status = current_loyalty[0]['status']
+                current_discount = current_loyalty[0]['discount']
+                target_reservation_count = current_reservation_count - 1
+                if target_reservation_count < 10:
+                    target_status = 'BRONZE'
+                    target_discount = 5
+                elif target_reservation_count < 20:
+                    target_status = 'SILVER'
+                    target_discount = 7
+                else:
+                    target_status = 'GOLD'
+                    target_discount = 10
+                connection = psycopg2.connect(self.DB_URL, sslmode="require")
+                cursor = connection.cursor()
+                q = ''' UPDATE loyalty SET reservation_count = %s, status = %s, discount = %s WHERE username = %s; '''
+                cursor.execute(q, (target_reservation_count, target_status, target_discount, username))
+                connection.commit()
+                result = True
+            else:
+                result = False
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
         finally:

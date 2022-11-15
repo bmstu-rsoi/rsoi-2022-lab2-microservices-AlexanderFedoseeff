@@ -19,6 +19,14 @@ jobs:
 
       # TODO build and run unit tests
 
+      - name: Deploy project
+        uses: akhileshns/heroku-deploy@v3.4.6
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "rsoi-lab-1-f"
+          heroku_email: "alexanderfedoseeff@gmail.com"
+          usedocker: true
+        
       - name: Build images
         timeout-minutes: 10
         run: docker compose build

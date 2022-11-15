@@ -136,15 +136,15 @@ def create_person():
         return make_response(jsonify({"find_hotel_uid": False}), 400)
 
 #получить информацию по конкретному бронированию
-@app.route('/api/v1/reservations/<reservationUid>', methods=['GET'])
-def get_reservation(reservationUid):
+@app.route('/api/v1/reservations/', methods=['GET'])
+def get_reservation():
     if 'X-User-Name' not in request.headers:
         abort(400)
     username = request.headers.get('X-User-Name')
+    reservationUid = request.args.get('reservationUid', default='', type= str)
     response = requests.get('http://reservation:8070/api/v1/get_user_reservations', params = {'username': username})
     response = response.json()
     result = []
-    print('!!!')
     for i in response:
         if i['reservationUid'] == reservationUid:
             result.append(i)
@@ -155,11 +155,12 @@ def get_reservation(reservationUid):
         return make_response(jsonify({}), 400)
 
 #удаление бронирования
-@app.route('/api/v1/reservations/<reservationUid>', methods=['DELETE'])
-def cancel_reservation(reservationUid):
+@app.route('/api/v1/reservations/', methods=['DELETE'])
+def cancel_reservation():
     if 'X-User-Name' not in request.headers:
         abort(400)
     username = request.headers.get('X-User-Name')
+    reservationUid = request.args.get('reservationUid', default='', type= str)
     response_reservation = requests.post('http://reservation:8070/api/v1/cancel_reservation', data = {'reservation_uid': reservationUid})
     if response_reservation.status_code == 201:
         paymentUid = response_reservation.json()['payment_uid']

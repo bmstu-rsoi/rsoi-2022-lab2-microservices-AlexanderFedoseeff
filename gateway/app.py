@@ -141,14 +141,33 @@ def get_reservation(reservationUid):
     if 'X-User-Name' not in request.headers:
         abort(400)
     username = request.headers.get('X-User-Name')
-    response = requests.get('http://reservation:8070/api/v1/get_user_reservations', params = {'username': username})
-    response = response.json()
+    response_reservations = requests.get('http://reservation:8070/api/v1/get_user_reservations', params = {'username': username})
+    response_reservations = response_reservations.json()
     result = []
-    for i in response:
+    tmp = []
+    for i in response_reservations:
         if i['reservationUid'] == reservationUid:
-            result.append(i)
+            tmp.append(i)
             break
-    if len(result) > 0: 
+    if len(tmp) > 0:
+        for r in tmp:
+            paymentUid = r['paymentUid']
+            response_payment = requests.get('http://payment:8060/api/v1/get_payment', params = {'paymentUid': paymentUid})
+            result.append({
+                    'reservationUid': r['reservationUid'], 
+                    'payment': response_payment.json(),
+                    'hotel': {
+                            'hotelUid': r['hotel']['hotelUid'],
+                            'name': r['hotel']['name'],
+                            'fullAddress': r['hotel']['fullAddress'],
+                            'stars': r['hotel']['stars'],
+                            }, 
+                    'status': r['status'],  
+                    'startDate': r['startDate'], 
+                    'endDate': r['endDate']})
+
+
+
         return make_response(result[0], 200)
     else:
         return make_response(jsonify({}), 400)

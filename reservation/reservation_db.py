@@ -161,7 +161,7 @@ class ReservationDB:
                                 'reservationUid': i[0], 
                                 'paymentUid': i[1], 
                                 'hotel': {
-                                    'hotelUid': i[2],
+                                    'hotelUid': hotel[0],
                                     'name': hotel[1],
                                     'fullAddress': hotel[2] + ', ' + hotel[3] + ', ' + hotel[4],
                                     'stars': hotel[5]

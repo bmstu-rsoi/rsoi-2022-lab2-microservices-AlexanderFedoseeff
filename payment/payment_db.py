@@ -41,16 +41,16 @@ class PaymentDB:
         cursor.close()
         connection.close()
 
-    def get_payment(self):
+    def get_payment(self, paymentUid):
         result = list()
         try:
             connection = psycopg2.connect(self.DB_URL, sslmode="require")
             cursor = connection.cursor()
-            cursor.execute("SELECT id, payment_uid, status, price FROM payment")
+            cursor.execute(''' SELECT status, price FROM payment WHERE payment_uid = %s; ''', (paymentUid,))
             record = cursor.fetchall()
             for i in record:
                 i = list(i)
-                result.append({"id": i[0], "payment_uid": i[1], "status": i[2], "price": i[3]})
+                result.append({"status": i[0], "price": i[1]})
         except (Exception, Error) as error:
             print("Ошибка при работе с PostgreSQL", error)
         finally:

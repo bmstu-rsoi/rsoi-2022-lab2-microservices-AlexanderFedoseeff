@@ -182,8 +182,25 @@ def get_reservations():
     if 'X-User-Name' not in request.headers:
         abort(400)
     username = request.headers.get('X-User-Name')
-    response = requests.get('http://reservation:8070/api/v1/get_user_reservations', params = {'username': username})
-    result = response.json()
+    response_reservation = requests.get('http://reservation:8070/api/v1/get_user_reservations', params = {'username': username})
+    result = []
+    for r in response_reservation.json():
+        paymentUid = r['paymentUid']
+        response_payment = requests.get('http://payment:8060/api/v1/get_payment', params = {'paymentUid': paymentUid})
+        result.append({
+                'reservationUid': r['reservationUid'], 
+                'payment': response_payment.json(),
+                'hotel': {
+                        'hotelUid': r['hotel']['hotelUid'],
+                        'name': r['hotel']['name'],
+                        'fullAddress': r['hotel']['fullAddress'],
+                        'stars': r['hotel']['stars'],
+                        }, 
+                'status': r['status'],  
+                'startDate': r['startDate'], 
+                'endDate': r['endDate']})
+
+
     return make_response(jsonify(result), 200)
 
 #информация о всех бронированиях и статусе в сисеме лояльности пользователя
@@ -193,8 +210,24 @@ def me():
         abort(400)
     username = username = request.headers.get('X-User-Name')
     response_reservations = requests.get('http://reservation:8070/api/v1/get_user_reservations', params = {'username': username})
+    result = []
+    for r in response_reservations.json():
+        paymentUid = r['paymentUid']
+        response_payment = requests.get('http://payment:8060/api/v1/get_payment', params = {'paymentUid': paymentUid})
+        result.append({
+                'reservationUid': r['reservationUid'], 
+                'payment': response_payment.json(),
+                'hotel': {
+                        'hotelUid': r['hotel']['hotelUid'],
+                        'name': r['hotel']['name'],
+                        'fullAddress': r['hotel']['fullAddress'],
+                        'stars': r['hotel']['stars'],
+                        }, 
+                'status': r['status'],  
+                'startDate': r['startDate'], 
+                'endDate': r['endDate']})
     response_loyalty = requests.get('http://loyalty:8050/api/v1/loyalty', params = {'username': username})
-    return make_response(jsonify({'reservations': response_reservations.json(), 'loyalty': response_loyalty.json()}), 200)
+    return make_response(jsonify({'reservations': result, 'loyalty': response_loyalty.json()}), 200)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=int(port))

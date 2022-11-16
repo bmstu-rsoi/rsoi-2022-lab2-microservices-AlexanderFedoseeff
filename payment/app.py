@@ -25,7 +25,8 @@ def get_test():
 @app.route('/api/v1/get_payment', methods=['GET'])
 def get_payment():
     db = PaymentDB()
-    result = list(db.get_payment())
+    paymentUid = request.args.get('paymentUid', default= '', type=str)
+    result = list(db.get_payment(paymentUid))
     if len(result) > 0:
         return make_response(jsonify(result[0]), 200)
     else:

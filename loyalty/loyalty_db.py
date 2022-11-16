@@ -134,7 +134,7 @@ class LoyaltyDB:
         try:
             current_loyalty = self.get_loyalty(username)
             if len(current_loyalty) > 0:
-                current_reservation_count = current_loyalty[0]['reservation_count']
+                current_reservation_count = current_loyalty[0]['reservationCount']
                 current_status = current_loyalty[0]['status']
                 current_discount = current_loyalty[0]['discount']
                 target_reservation_count = current_reservation_count - 1
